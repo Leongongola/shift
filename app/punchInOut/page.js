@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { getAuth } from "firebase/auth";
+import Image from "next/image";
 import {
   getFirestore,
   collection,
@@ -283,7 +284,7 @@ const PunchInOutComponent = () => {
               </p>
             </div>
             <div className="mb-8 text-center">
-              <img
+              <Image
                 src={worker?.profilePictureUrl || "/default-profile.png"}
                 alt="Profile"
                 className="w-24 h-24 rounded-full mx-auto mb-4"

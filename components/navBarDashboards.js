@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { getAuth, signOut } from "firebase/auth";
@@ -20,6 +21,7 @@ const NavBarDashboard = () => {
   const db = getFirestore(firebaseApp);
   const [profilePic, setProfilePic] = useState("");
 
+  // Fetch the user's profile picture from Firestore
   useEffect(() => {
     const fetchUserProfilePic = async () => {
       const user = auth.currentUser;
@@ -34,8 +36,9 @@ const NavBarDashboard = () => {
     };
 
     fetchUserProfilePic();
-  }, [auth]);
+  }, [auth, db]); // Added `db` to the dependency array
 
+  // Handle user logout
   const handleLogout = () => {
     signOut(auth)
       .then(() => {
@@ -63,7 +66,6 @@ const NavBarDashboard = () => {
           <Link href="/workersDashboard" className="hover:text-blue-400">
             Workers Dashboard
           </Link>
-
           <Link
             href="/profile"
             className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors border-2 border-transparent hover:border-gray-400"
