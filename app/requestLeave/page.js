@@ -4,12 +4,20 @@ import React, { useState, useEffect, Suspense } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { getAuth } from "firebase/auth";
-import { getFirestore, collection, addDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
 import { firebaseApp } from "../../utils/firebase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TextField, Button, Box, Typography } from "@mui/material";
 import SupportNavBar from "@/components/faqsContactManagerNavBar";
+import "@/app/page.module.css"; // Import custom CSS file
 
 /**
  * RequestLeave Component
@@ -63,18 +71,18 @@ const RequestLeaveComponent = () => {
       <SupportNavBar />
       <Box className="flex min-h-screen bg-gradient-to-r from-blue-300 via-blue-600 to-blue-800 flex-col items-center justify-between pt-15">
         <Box className="w-full h-screen flex flex-col justify-center items-center">
-          <Typography variant="h1" className="font-bold text-white mb-8">
+          <Typography variant="h2" className="font-bold text-white mb-8">
             Request Leave
           </Typography>
-          <Box className="bg-black opacity-85 rounded-lg shadow-md p-8 max-w-4xl w-full">
-            <Typography variant="h2" className=" font-bold text-white mb-4">
+          <Box className="bg-black bg-opacity-80 rounded-lg shadow-md p-8 max-w-4xl w-full">
+            <Typography variant="h4" className="font-bold text-white mb-4">
               Select Dates for Leave
             </Typography>
             <Calendar
               onChange={handleDateChange}
               selectRange
               value={selectedDates}
-              className="mb-6 react-calendar--large"
+              className="mb-6 react-calendar--large custom-calendar"
             />
             <form className="space-y-6" onSubmit={handleSubmit}>
               <Box>
@@ -114,6 +122,7 @@ const RequestLeaveComponent = () => {
     </>
   );
 };
+
 const RequestLeave = () => (
   <Suspense fallback={<div>Loading...</div>}>
     <RequestLeaveComponent />

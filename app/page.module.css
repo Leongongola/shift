@@ -163,6 +163,36 @@
   .description a {
     padding: 1rem;
   }
+  /* RequestLeave.css */
+  .custom-calendar {
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: white;
+    padding: 10px;
+    max-width: 100%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .react-calendar {
+    width: 100%;
+  }
+
+  .react-calendar__tile {
+    max-width: 100%;
+    text-align: center;
+    padding: 0.5em 0;
+  }
+
+  .react-calendar__tile--now {
+    background: blue;
+    color: white;
+    font-weight: bold;
+  }
+
+  .react-calendar__tile--active {
+    background: #2563eb;
+    color: white;
+  }
 
   .description p,
   .description div {
