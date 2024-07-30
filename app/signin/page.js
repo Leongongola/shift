@@ -1,30 +1,30 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import {
   getAuth,
-  signInWithPopup,
-  GoogleAuthProvider,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
 } from "firebase/auth";
 import {
   getFirestore,
-  doc,
-  getDoc,
-  collectionGroup,
+  collection,
   query,
   where,
   getDocs,
+  doc,
+  getDoc,
 } from "firebase/firestore";
-import { firebaseApp } from "../../utils/firebase";
+import { firebaseApp } from "@/utils/firebase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import NavBar from "@/components/navBarLogin";
 import Footer from "@/components/footer";
 
+// Initialize Firestore
 const db = getFirestore(firebaseApp);
 
-const Login = () => {
+const App = () => {
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,84 +33,71 @@ const Login = () => {
   const [resetEmailError, setResetEmailError] = useState("");
   const router = useRouter();
 
-  useEffect(() => {
-    const auth = getAuth(firebaseApp);
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        const managerDocRef = doc(db, "managers", user.uid);
-        const managerDocSnap = await getDoc(managerDocRef);
-        if (managerDocSnap.exists()) {
-          router.push("/dashboard");
-        } else {
-          router.push("/workerLandingPage");
-        }
-      }
-    });
-    return unsubscribe;
-  }, [router]);
-
-  const handleGoogleSignIn = async () => {
-    const auth = getAuth(firebaseApp);
-    const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      const managerDocRef = doc(db, "managers", user.uid);
-      const managerDocSnap = await getDoc(managerDocRef);
-      if (managerDocSnap.exists()) {
-        router.push("/dashboard");
-      } else {
-        const workersQuery = query(
-          collectionGroup(db, "workers"),
-          where("email", "==", user.email)
-        );
-        const workersSnapshot = await getDocs(workersQuery);
-        if (!workersSnapshot.empty) {
-          const managerDoc = workersSnapshot.docs[0].ref.parent.parent;
-          router.push(`/workerLandingPage?managerId=${managerDoc.id}`);
-        } else {
-          setError("No associated manager found for this email.");
-        }
-      }
-    } catch (error) {
-      setError("Error signing in with Google: " + error.message);
-    }
-  };
-
-  const handleEmailSignIn = async (e) => {
-    e.preventDefault();
-    const auth = getAuth(firebaseApp);
-    try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      const user = result.user;
-
-      const managerDocRef = doc(db, "managers", user.uid);
-      const managerDocSnap = await getDoc(managerDocRef);
-      if (managerDocSnap.exists()) {
-        router.push("/dashboard");
-      } else {
-        const workersQuery = query(
-          collectionGroup(db, "workers"),
-          where("email", "==", user.email)
-        );
-        const workersSnapshot = await getDocs(workersQuery);
-        if (!workersSnapshot.empty) {
-          const managerDoc = workersSnapshot.docs[0].ref.parent.parent;
-          router.push(`/workerLandingPage?managerId=${managerDoc.id}`);
-        } else {
-          setError("No associated manager found for this email.");
-        }
-      }
-    } catch (error) {
-      setError("Invalid Email or Password, please try again.");
-    }
-  };
-
+  // Toggle Password Visibility
   const togglePasswordVisibility = () => {
     setPasswordVisible(!passwordVisible);
   };
 
+  // Handle Email Sign-In
+  const handleEmailSignIn = async (e) => {
+    e.preventDefault();
+    const auth = getAuth(firebaseApp);
+
+    try {
+      // Try to sign in as a manager first
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+      const managerDocRef = doc(db, "managers", user.uid);
+      2;
+      const managerDoc = await getDoc(managerDocRef);
+
+      if (managerDoc.exists()) {
+        // Redirect to manager dashboard
+        router.push("../dashboard");
+      } else {
+        // Check if the user is a worker
+        const managersQuery = query(collection(db, "managers"));
+        const managersSnapshot = await getDocs(managersQuery);
+
+        let foundWorker = false;
+        for (const managerDoc of managersSnapshot.docs) {
+          const managerId = managerDoc.id;
+          const workersQuery = query(
+            collection(db, "managers", managerId, "workers"),
+            where("email", "==", email)
+          );
+          const workersSnapshot = await getDocs(workersQuery);
+
+          if (!workersSnapshot.empty) {
+            const workerDoc = workersSnapshot.docs[0];
+            const workerData = workerDoc.data();
+
+            if (workerData.passcode === password) {
+              foundWorker = true;
+              // Redirect to PunchInOut page
+              router.push(
+                `/punchInOut?managerId=${managerId}&firstName=${workerData.firstName}&lastName=${workerData.lastName}`
+              );
+              break;
+            }
+          }
+        }
+
+        if (!foundWorker) {
+          setError("Invalid Email or Password, please try again.");
+        }
+      }
+    } catch (error) {
+      setError("Error signing in, please try again.");
+      console.error("Error signing in: ", error);
+    }
+  };
+
+  // Handle Password Reset
   const handlePasswordReset = async () => {
     const auth = getAuth(firebaseApp);
     try {
@@ -124,33 +111,31 @@ const Login = () => {
   return (
     <>
       <NavBar />
-      <main className="flex min-h-screen bg-gradient-to-r from-blue-500 via-blue-700 to-blue-500 items-center justify-between">
-        <div className="w-6/12 h-screen flex flex-col justify-center items-center">
-          <h1 className="text-5xl text-white mb-4">
-            <span className="font-comfortaa font-bold">Welcome to,</span>{" "}
-            <span className="text-6xl font-rockSalt">ShiftEaze!</span>
+      <main className="flex flex-col md:flex-row min-h-screen bg-gradient-to-r from-cyan-900 to-blue-900 items-center justify-between py-8 md:py-0">
+        <div className="w-full md:w-6/12 h-full flex flex-col justify-center items-center p-4 md:p-8">
+          <h1 className="font-bold text-4xl md:text-6xl text-white mb-4">
+            ShiftEaze
           </h1>
-          <p className="text-white text-lg font-nixie mb-4">
-            Please log in or sign up to get started!
+          <p className="text-white text-lg mb-4 text-center">
+            Streamlining Workforce Management. Efficient scheduling and
+            management for better productivity.
           </p>
         </div>
-        <div className="w-6/12 h-screen flex flex-col justify-center items-center bg-white bg-opacity-20 p-8 rounded-lg shadow-lg">
-          <h2 className="text-white text-4xl font-comfortaa font-bold mb-8">
-            Login Below
+        <div className="w-full md:w-6/12 h-full flex flex-col justify-center items-center p-4 md:p-8">
+          <h2 className="text-white text-2xl md:text-4xl mb-6 md:mb-8">
+            Sign In Below
           </h2>
           <form
             onSubmit={handleEmailSignIn}
-            className="flex flex-col items-center w-full max-w-xs"
+            className="flex flex-col items-center w-full max-w-xs mb-6 md:mb-8"
           >
             <div className="mb-4 w-full">
-              <label className="block text-white font-comfortaa font-semibold mb-2">
-                Email
-              </label>
+              <label className="block text-white mb-2">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={`w-full px-4 py-2 rounded-md text-black focus:outline-none font-nixie ${
+                className={`w-full px-4 py-2 rounded-md text-black focus:outline-none ${
                   error
                     ? "border-red-500 bg-red-50 text-red-900 placeholder-red-700"
                     : ""
@@ -160,15 +145,13 @@ const Login = () => {
               />
             </div>
             <div className="mb-6 w-full">
-              <label className="block text-white font-comfortaa font-semibold mb-2">
-                Password
-              </label>
+              <label className="block text-white mb-2">Password</label>
               <div className="relative">
                 <input
                   type={passwordVisible ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full px-4 py-2 rounded-md text-black focus:outline-none font-nixie ${
+                  className={`w-full px-4 py-2 rounded-md text-black focus:outline-none ${
                     error
                       ? "border-red-500 bg-red-50 text-red-900 placeholder-red-700"
                       : ""
@@ -191,17 +174,11 @@ const Login = () => {
             )}
             <button
               type="submit"
-              className="bg-blue-700 text-white rounded-md py-3 px-6 mb-4 w-full transition duration-300 ease-in-out hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 animate-pulse border-2 border-transparent hover:border-blue-400 font-comfortaa font-semibold"
+              className="bg-blue-700 text-white rounded-md py-3 px-6 w-full transition duration-300 ease-in-out hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 border-2 border-transparent hover:border-blue-400"
             >
               Sign in with Email
             </button>
           </form>
-          <button
-            onClick={handleGoogleSignIn}
-            className="bg-blue-700 text-white rounded-md py-3 px-6 mb-4 w-full max-w-xs transition duration-300 ease-in-out hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 border-2 border-transparent hover:border-blue-400 font-comfortaa font-semibold"
-          >
-            Sign in with Google
-          </button>
           {resetEmailSent && (
             <p className="text-green-500 mb-4">
               Password reset email sent. Please check your inbox.
@@ -212,7 +189,7 @@ const Login = () => {
           )}
           <p className="mt-4 text-white text-sm text-center">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-blue-700 hover:underline">
+            <Link href={`/signup`} className="text-blue-400 hover:underline">
               Sign up here!
             </Link>
           </p>
@@ -220,7 +197,7 @@ const Login = () => {
             Forgot password?{" "}
             <button
               onClick={handlePasswordReset}
-              className="text-blue-700 hover:underline"
+              className="text-blue-400 hover:underline"
             >
               Reset here
             </button>
@@ -232,4 +209,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default App;
