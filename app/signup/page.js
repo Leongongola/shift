@@ -1,111 +1,73 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   getAuth,
-  signInWithEmailAndPassword,
-  sendPasswordResetEmail,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
 } from "firebase/auth";
 import {
   getFirestore,
+  doc,
+  setDoc,
   collection,
   query,
-  where,
   getDocs,
-  doc,
-  getDoc,
 } from "firebase/firestore";
-import { firebaseApp } from "../utils/firebase";
+import { firebaseApp } from "../../utils/firebase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import NavBar from "@/components/navBarLogin";
-import Footer from "@/components/footer";
+import Footer from "@/components/footer"; // Import the Footer component
 
 // Initialize Firestore
 const db = getFirestore(firebaseApp);
 
-const App = () => {
+const Signup = () => {
+  // State variables
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [resetEmailSent, setResetEmailSent] = useState(false);
-  const [resetEmailError, setResetEmailError] = useState("");
+  const [confirmationMessage, setConfirmationMessage] = useState("");
   const router = useRouter();
 
-  // Toggle Password Visibility
-  const togglePasswordVisibility = () => {
-    setPasswordVisible(!passwordVisible);
-  };
-
-  // Handle Email Sign-In
-  const handleEmailSignIn = async (e) => {
+  // Handle Email Sign-Up
+  const handleEmailSignup = async (e) => {
     e.preventDefault();
     const auth = getAuth(firebaseApp);
-
     try {
-      // Try to sign in as a manager first
-      const userCredential = await signInWithEmailAndPassword(
+      const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
       const user = userCredential.user;
-      const managerDocRef = doc(db, "managers", user.uid);
-      2;
-      const managerDoc = await getDoc(managerDocRef);
+      await sendEmailVerification(user);
+      setConfirmationMessage(
+        "Verification email sent. Please check your inbox and verify your email before logging in."
+      );
 
-      if (managerDoc.exists()) {
-        // Redirect to manager dashboard
-        router.push("../dashboard");
-      } else {
-        // Check if the user is a worker
-        const managersQuery = query(collection(db, "managers"));
-        const managersSnapshot = await getDocs(managersQuery);
+      const userDocRef = doc(db, "managers", user.uid);
+      await setDoc(userDocRef, {
+        email: user.email,
+      });
 
-        let foundWorker = false;
-        for (const managerDoc of managersSnapshot.docs) {
-          const managerId = managerDoc.id;
-          const workersQuery = query(
-            collection(db, "managers", managerId, "workers"),
-            where("email", "==", email)
-          );
-          const workersSnapshot = await getDocs(workersQuery);
-
-          if (!workersSnapshot.empty) {
-            const workerDoc = workersSnapshot.docs[0];
-            const workerData = workerDoc.data();
-
-            if (workerData.passcode === password) {
-              foundWorker = true;
-              // Redirect to PunchInOut page
-              router.push(
-                `/punchInOut?managerId=${managerId}&firstName=${workerData.firstName}&lastName=${workerData.lastName}`
-              );
-              break;
-            }
-          }
-        }
-
-        if (!foundWorker) {
-          setError("Invalid Email or Password, please try again.");
-        }
-      }
+      setEmail("");
+      setPassword("");
     } catch (error) {
-      setError("Error signing in, please try again.");
-      console.error("Error signing in: ", error);
+      console.error("Error during email sign-up:", error);
+      if (error.code === "auth/email-already-in-use") {
+        setError("This email is already in use. Please use a different email.");
+      } else {
+        setError("Error signing up, please try again.");
+      }
     }
   };
 
-  // Handle Password Reset
-  const handlePasswordReset = async () => {
-    const auth = getAuth(firebaseApp);
-    try {
-      await sendPasswordResetEmail(auth, email);
-      setResetEmailSent(true);
-    } catch (error) {
-      setResetEmailError("Error sending password reset email.");
-    }
+  // Toggle Password Visibility
+  const togglePasswordVisibility = () => {
+    setPasswordVisible(!passwordVisible);
   };
 
   return (
@@ -123,10 +85,10 @@ const App = () => {
         </div>
         <div className="w-full md:w-6/12 h-full flex flex-col justify-center items-center p-4 md:p-8">
           <h2 className="text-white text-2xl md:text-4xl mb-6 md:mb-8">
-            Sign In Below
+            Manager Sign Up Below
           </h2>
           <form
-            onSubmit={handleEmailSignIn}
+            onSubmit={handleEmailSignup}
             className="flex flex-col items-center w-full max-w-xs mb-6 md:mb-8"
           >
             <div className="mb-4 w-full">
@@ -176,31 +138,17 @@ const App = () => {
               type="submit"
               className="bg-blue-700 text-white rounded-md py-3 px-6 w-full transition duration-300 ease-in-out hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 border-2 border-transparent hover:border-blue-400"
             >
-              Sign in with Email
+              Sign up with Email
             </button>
           </form>
-          {resetEmailSent && (
-            <p className="text-green-500 mb-4">
-              Password reset email sent. Please check your inbox.
-            </p>
-          )}
-          {resetEmailError && (
-            <p className="text-red-500 mb-4">{resetEmailError}</p>
+          {confirmationMessage && (
+            <p className="text-green-500 mb-4">{confirmationMessage}</p>
           )}
           <p className="mt-4 text-white text-sm text-center">
-            Don&apos;t have an account?{" "}
-            <Link href={`/signup`} className="text-blue-400 hover:underline">
-              Sign up here!
+            Already have an account?{" "}
+            <Link href="/signin" className="text-blue-400 hover:underline">
+              Login here!
             </Link>
-          </p>
-          <p className="mt-4 text-white text-sm text-center">
-            Forgot password?{" "}
-            <button
-              onClick={handlePasswordReset}
-              className="text-blue-400 hover:underline"
-            >
-              Reset here
-            </button>
           </p>
         </div>
       </main>
@@ -209,4 +157,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default Signup;

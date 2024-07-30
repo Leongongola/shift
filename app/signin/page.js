@@ -7,7 +7,15 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
 } from "firebase/auth";
-import { getFirestore, doc, getDoc, collectionGroup, query, where, getDocs } from "firebase/firestore";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collectionGroup,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { firebaseApp } from "../../utils/firebase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -119,35 +127,51 @@ const Login = () => {
       <main className="flex min-h-screen bg-gradient-to-r from-blue-500 via-blue-700 to-blue-500 items-center justify-between">
         <div className="w-6/12 h-screen flex flex-col justify-center items-center">
           <h1 className="text-5xl text-white mb-4">
-            <span className="font-comfortaa font-bold">Welcome to,</span> <span className="text-6xl font-rockSalt">ShiftEaze!</span>
+            <span className="font-comfortaa font-bold">Welcome to,</span>{" "}
+            <span className="text-6xl font-rockSalt">ShiftEaze!</span>
           </h1>
-          <p className="text-white text-lg font-nixie mb-4">Please log in or sign up to get started!</p>
+          <p className="text-white text-lg font-nixie mb-4">
+            Please log in or sign up to get started!
+          </p>
         </div>
         <div className="w-6/12 h-screen flex flex-col justify-center items-center bg-white bg-opacity-20 p-8 rounded-lg shadow-lg">
-          <h2 className="text-white text-4xl font-comfortaa font-bold mb-8">Login Below</h2>
-          <form onSubmit={handleEmailSignIn} className="flex flex-col items-center w-full max-w-xs">
+          <h2 className="text-white text-4xl font-comfortaa font-bold mb-8">
+            Login Below
+          </h2>
+          <form
+            onSubmit={handleEmailSignIn}
+            className="flex flex-col items-center w-full max-w-xs"
+          >
             <div className="mb-4 w-full">
-              <label className="block text-white font-comfortaa font-semibold mb-2">Email</label>
+              <label className="block text-white font-comfortaa font-semibold mb-2">
+                Email
+              </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={`w-full px-4 py-2 rounded-md text-black focus:outline-none font-nixie ${
-                  error ? "border-red-500 bg-red-50 text-red-900 placeholder-red-700" : ""
+                  error
+                    ? "border-red-500 bg-red-50 text-red-900 placeholder-red-700"
+                    : ""
                 }`}
                 placeholder="YourName@gmail.com"
                 required
               />
             </div>
             <div className="mb-6 w-full">
-              <label className="block text-white font-comfortaa font-semibold mb-2">Password</label>
+              <label className="block text-white font-comfortaa font-semibold mb-2">
+                Password
+              </label>
               <div className="relative">
                 <input
                   type={passwordVisible ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={`w-full px-4 py-2 rounded-md text-black focus:outline-none font-nixie ${
-                    error ? "border-red-500 bg-red-50 text-red-900 placeholder-red-700" : ""
+                    error
+                      ? "border-red-500 bg-red-50 text-red-900 placeholder-red-700"
+                      : ""
                   }`}
                   required
                 />
@@ -179,18 +203,25 @@ const Login = () => {
             Sign in with Google
           </button>
           {resetEmailSent && (
-            <p className="text-green-500 mb-4">Password reset email sent. Please check your inbox.</p>
+            <p className="text-green-500 mb-4">
+              Password reset email sent. Please check your inbox.
+            </p>
           )}
-          {resetEmailError && <p className="text-red-500 mb-4">{resetEmailError}</p>}
+          {resetEmailError && (
+            <p className="text-red-500 mb-4">{resetEmailError}</p>
+          )}
           <p className="mt-4 text-white text-sm text-center">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-blue-700 hover:underline">
               Sign up here!
             </Link>
           </p>
           <p className="mt-4 text-white text-sm text-center">
             Forgot password?{" "}
-            <button onClick={handlePasswordReset} className="text-blue-700 hover:underline">
+            <button
+              onClick={handlePasswordReset}
+              className="text-blue-700 hover:underline"
+            >
               Reset here
             </button>
           </p>
