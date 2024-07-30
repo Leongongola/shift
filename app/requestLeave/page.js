@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { getAuth } from "firebase/auth";
@@ -20,7 +20,7 @@ import SupportNavBar from "@/components/faqsContactManagerNavBar";
  *
  * @returns {JSX.Element} The RequestLeave component
  */
-const RequestLeave = () => {
+const RequestLeaveComponent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const managerId = searchParams.get("managerId");
@@ -114,5 +114,10 @@ const RequestLeave = () => {
     </>
   );
 };
+const RequestLeave = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <RequestLeaveComponent />
+  </Suspense>
+);
 
 export default RequestLeave;
