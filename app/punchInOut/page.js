@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect } from "react";
 import { getAuth } from "firebase/auth";
 import {
@@ -16,15 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { firebaseApp } from "../../utils/firebase";
 import Link from "next/link";
 
-/**
- * PunchInOut Component
- *
- * This component allows workers to punch in and out, and manage their break times.
- * It also displays the current time, worked hours, break time, and paid hours.
- *
- * @returns {JSX.Element} The PunchInOut component
- */
-const PunchInOut = () => {
+const PunchInOutComponent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const managerId = searchParams.get("managerId");
@@ -379,5 +369,11 @@ const PunchInOut = () => {
     </div>
   );
 };
+
+const PunchInOut = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <PunchInOutComponent />
+  </Suspense>
+);
 
 export default PunchInOut;
