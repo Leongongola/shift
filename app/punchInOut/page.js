@@ -287,6 +287,8 @@ const PunchInOutComponent = () => {
               <Image
                 src={worker?.profilePictureUrl || "/default-profile.png"}
                 alt="Profile"
+                width={100} // specify the desired width
+                height={100} // specify the desired height
                 className="w-24 h-24 rounded-full mx-auto mb-4"
               />
             </div>
