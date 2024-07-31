@@ -12,20 +12,16 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { firebaseApp } from "../../utils/firebase";
+import { Calendar, momentLocalizer, Views } from "react-big-calendar";
+import moment from "moment";
+import "react-big-calendar/lib/css/react-big-calendar.css";
 import Modal from "react-modal";
 import { TextField, Button, Box, Typography } from "@mui/material";
 import SupportNavBar from "@/components/faqsContactManagerNavBar";
 import "@/app/page.module.css"; // Import custom CSS file
 
-const daysOfWeek = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
+// Configure moment and localizer for the calendar
+const localizer = momentLocalizer(moment);
 
 const ScheduleManagerComponent = () => {
   const auth = getAuth(firebaseApp);
@@ -38,7 +34,7 @@ const ScheduleManagerComponent = () => {
   const [endTime, setEndTime] = useState("");
   const [status, setStatus] = useState("");
   const [workers, setWorkers] = useState([]);
-  const [schedules, setSchedules] = useState([]);
+  const [events, setEvents] = useState([]);
 
   useEffect(() => {
     const fetchWorkers = async () => {
@@ -80,7 +76,7 @@ const ScheduleManagerComponent = () => {
           end: new Date(data.end),
         };
       });
-      setSchedules(scheduleData);
+      setEvents(scheduleData);
     } catch (error) {
       console.error("Error fetching schedules:", error);
     }
@@ -90,9 +86,8 @@ const ScheduleManagerComponent = () => {
     fetchSchedules();
   }, []);
 
-  const handleSelectSlot = (workerId, day) => {
-    setSelectedDate(day);
-    setWorkerId(workerId);
+  const handleSelectSlot = ({ start, end }) => {
+    setSelectedDate({ start, end });
     setModalIsOpen(true);
   };
 
@@ -110,8 +105,8 @@ const ScheduleManagerComponent = () => {
     try {
       const scheduleRef = collection(db, "schedules");
       const newEvent = {
-        start: selectedDate,
-        end: selectedDate,
+        start: selectedDate.start,
+        end: selectedDate.end,
         workerId,
         title: `${getWorkerName(workerId)}: ${startTime} - ${endTime}`,
         startTime,
@@ -131,12 +126,12 @@ const ScheduleManagerComponent = () => {
       if (workerDoc.exists()) {
         workerSchedule = workerDoc.data().schedule || {};
       }
-      const dateString = selectedDate.toISOString().split("T")[0];
+      const dateString = selectedDate.start.toISOString().split("T")[0];
       workerSchedule[dateString] = { startTime, endTime };
 
       await updateDoc(workerDocRef, { schedule: workerSchedule });
 
-      setSchedules([...schedules, newEvent]);
+      setEvents([...events, newEvent]);
       setStatus("Schedule created successfully.");
       closeModal();
     } catch (error) {
@@ -149,14 +144,30 @@ const ScheduleManagerComponent = () => {
     return worker ? `${worker.firstName} ${worker.lastName}` : "";
   };
 
-  const renderSchedule = (workerId, day) => {
-    const dateString = day.toISOString().split("T")[0];
-    const schedule = schedules.find(
-      (schedule) =>
-        schedule.workerId === workerId &&
-        schedule.start.toISOString().split("T")[0] === dateString
+  const customTimeGutterHeader = () => {
+    return (
+      <div>
+        {workers.map((worker, index) => (
+          <div
+            key={index}
+            className="h-16 flex items-center justify-center border-b border-gray-200"
+          >
+            {worker.firstName} {worker.lastName}
+          </div>
+        ))}
+      </div>
     );
-    return schedule ? `${schedule.startTime} - ${schedule.endTime}` : "";
+  };
+
+  const customEventWrapper = ({ event }) => {
+    const worker = workers.find((w) => w.id === event.workerId);
+    return (
+      <div className="bg-blue-500 text-white rounded p-1">
+        {worker ? worker.firstName : ""} {worker ? worker.lastName : ""}
+        <br />
+        {event.title}
+      </div>
+    );
   };
 
   return (
@@ -167,48 +178,33 @@ const ScheduleManagerComponent = () => {
           <h1 className="text-3xl font-bold text-center mb-4">
             Schedule Manager
           </h1>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-300">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 border-b border-gray-300">Worker</th>
-                  {daysOfWeek.map((day) => (
-                    <th
-                      key={day}
-                      className="px-4 py-2 border-b border-gray-300"
-                    >
-                      {day}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {workers.map((worker) => (
-                  <tr key={worker.id}>
-                    <td className="px-4 py-2 border-b border-gray-300">
-                      {worker.firstName} {worker.lastName}
-                    </td>
-                    {daysOfWeek.map((day, index) => {
-                      const today = new Date();
-                      const dayDate = new Date(
-                        today.setDate(
-                          today.getDate() - today.getDay() + index + 1
-                        )
-                      );
-                      return (
-                        <td
-                          key={day}
-                          className="px-4 py-2 border-b border-gray-300 cursor-pointer"
-                          onClick={() => handleSelectSlot(worker.id, dayDate)}
-                        >
-                          {renderSchedule(worker.id, dayDate)}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex border border-black rounded-lg">
+            <div className="flex-shrink-0 border-r border-black">
+              {workers.map((worker) => (
+                <div key={worker.id} className="p-4 border-b border-black">
+                  {worker.firstName} {worker.lastName}
+                </div>
+              ))}
+            </div>
+            <div className="flex-grow bg-white">
+              <Calendar
+                localizer={localizer}
+                events={events}
+                startAccessor="start"
+                endAccessor="end"
+                selectable
+                views={["work_week"]}
+                defaultView="work_week"
+                style={{ height: 1000, width: "100%" }}
+                onSelectSlot={handleSelectSlot}
+                onSelectEvent={(event) => alert(event.title)}
+                components={{
+                  timeGutterHeader: customTimeGutterHeader,
+                  eventWrapper: customEventWrapper,
+                  timeGutter: () => null, // Remove time slots
+                }}
+              />
+            </div>
           </div>
         </div>
         <Modal
@@ -236,7 +232,6 @@ const ScheduleManagerComponent = () => {
             <Box>
               <TextField
                 select
-                label="Worker"
                 value={workerId}
                 onChange={(e) => setWorkerId(e.target.value)}
                 fullWidth
@@ -256,7 +251,6 @@ const ScheduleManagerComponent = () => {
             <Box>
               <TextField
                 label="Start Time"
-                type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 fullWidth
@@ -267,8 +261,7 @@ const ScheduleManagerComponent = () => {
             <Box>
               <TextField
                 label="End Time"
-                type="time"
-                value
+                value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
                 fullWidth
                 placeholder="HH:MM"
