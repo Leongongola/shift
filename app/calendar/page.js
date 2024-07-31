@@ -295,4 +295,10 @@ const ScheduleManagerComponent = () => {
   );
 };
 
-export default ScheduleManagerComponent;
+const ScheduleManager = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <ScheduleManagerComponent />
+  </Suspense>
+);
+
+export default ScheduleManager;

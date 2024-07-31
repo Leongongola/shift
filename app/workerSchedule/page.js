@@ -158,4 +158,9 @@ const WorkerScheduleComponent = () => {
   );
 };
 
-export default WorkerScheduleComponent;
+const WorkerSchedule = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <WorkerScheduleComponent />
+  </Suspense>
+);
+export default WorkerSchedule;

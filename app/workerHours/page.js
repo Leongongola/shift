@@ -107,7 +107,7 @@ const CustomCalendar = styled(Calendar)`
   }
 `;
 
-const WorkerHoursView = () => {
+const WorkerHoursViewComponent = () => {
   const auth = getAuth(firebaseApp);
   const db = getFirestore(firebaseApp);
   const router = useRouter();
@@ -278,4 +278,9 @@ const WorkerHoursView = () => {
   );
 };
 
+const WorkerHoursView = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <WorkerHoursViewComponent />
+  </Suspense>
+);
 export default WorkerHoursView;
