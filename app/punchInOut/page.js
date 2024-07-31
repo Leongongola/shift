@@ -252,9 +252,12 @@ const PunchInOutComponent = () => {
           >
             Request Leave
           </Link>
-          <button className="bg-green-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-green-600 border-2 border-transparent hover:border-green-300 ml-2">
+          <Link
+            href={`/workerSchedule?workerId=${auth.currentUser.uid}`}
+            className="bg-green-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-green-600 border-2 border-transparent hover:border-green-300 ml-2"
+          >
             View Schedule
-          </button>
+          </Link>
         </div>
         <div>
           <Link
