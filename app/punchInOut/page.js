@@ -271,12 +271,12 @@ const PunchInOutComponent = () => {
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : (
-          <div className="bg-black opacity-95 p-10 rounded-lg shadow-lg w-full text-black">
-            <h2 className="text-gray-200 text-3xl mb-6 text-center">
+          <div className="bg-gradient-to-r from-blue-500 via-blue-500 to-blue-500 p-10 rounded-lg shadow-lg w-full text-black">
+            <h2 className="text-white text-3xl mb-6 text-center">
               Welcome, {worker ? worker.firstName : "Worker"}
             </h2>
             <div className="flex flex-col items-center mb-6">
-              <p className="text-gray-200 text-2xl mb-4">
+              <p className="text-white text-2xl mb-4">
                 {currentTime.toLocaleDateString()}
               </p>
               <p className="text-5xl text-white font-bold">

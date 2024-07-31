@@ -21,13 +21,13 @@ const SupportNavBar = () => {
   const backToWorkerProfileLink = `/punchInOut?managerId=${managerId}&firstName=${firstName}&lastName=${lastName}`;
 
   return (
-    <nav className="bg-black opacity-85 text-white py-3 w-full">
+    <nav className="bg-gradient-to-r from-blue-300 via-blue-600 to-blue-800 b-8text-white py-3 w-full">
       <div className="flex justify-between items-center px-4">
-        <div className="text-xl font-bold">ShiftEaze</div>
+        <div className="text-3xl font-bold">ShiftEaze</div>
         <div className="flex space-x-6 items-center">
           <Link
             href={backToWorkerProfileLink}
-            className="bg-gray-500 text-white px-4 py-2 rounded-md inline-block shadow-md hover:bg-gray-600 border-2 border-transparent hover:border-gray-400"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md inline-block shadow-md  border-2 border-transparent hover:border-gray-400"
           >
             Back to Worker Profile
           </Link>

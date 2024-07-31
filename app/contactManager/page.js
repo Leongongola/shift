@@ -106,7 +106,7 @@ const WorkerSupportComponent = () => {
       <main className="flex min-h-screen bg-gradient-to-r from-blue-300 via-blue-600 to-blue-800 flex-col items-center justify-between pt-15">
         <div className="w-full h-screen flex flex-col justify-center items-center">
           <h1 className="font-bold text-6xl text-white mb-8">Support</h1>
-          <div className="bg-black opacity-85 rounded-lg shadow-md p-8 max-w-3xl w-full">
+          <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 rounded-lg shadow-md p-8 max-w-3xl w-full">
             <h2 className="text-2xl font-bold text-white mb-4">
               Contact Your Manager
             </h2>

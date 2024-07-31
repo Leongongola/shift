@@ -63,9 +63,6 @@ const NavBarDashboard = () => {
           <Link href="/calendar?view=admin" className="hover:text-blue-400">
             Calendar
           </Link>
-          <Link href="/workersDashboard" className="hover:text-blue-400">
-            Workers Dashboard
-          </Link>
           <Link
             href="/profile"
             className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors border-2 border-transparent hover:border-gray-400"

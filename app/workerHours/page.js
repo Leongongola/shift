@@ -1,18 +1,72 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect } from "react";
 import { getAuth } from "firebase/auth";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { getFirestore, collection, query, getDocs } from "firebase/firestore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { firebaseApp } from "../../utils/firebase";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import Link from "next/link";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import styled from "styled-components";
+import Modal from "react-modal";
+import format from "date-fns/format";
 
-// Custom styles for the Calendar
+// Custom styled-components
+const Container = styled.div`
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to right, #022c43, #1b3b6f);
+  color: white;
+`;
+
+const Content = styled.div`
+  background: white;
+  color: black;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  width: 100%;
+  margin: 20px;
+`;
+
+const Title = styled.h2`
+  margin-bottom: 20px;
+  font-size: 24px;
+  text-align: center;
+`;
+
+const DateRangePicker = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+`;
+
+const Button = styled.button`
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  &:hover {
+    background-color: #0056b3;
+  }
+`;
+
+const BackButton = styled(Button)`
+  background-color: #6c757d;
+  &:hover {
+    background-color: #5a6268;
+  }
+  margin-bottom: 20px;
+`;
+
 const CustomCalendar = styled(Calendar)`
   width: 100%;
   max-width: 100%;
@@ -53,21 +107,25 @@ const CustomCalendar = styled(Calendar)`
   }
 `;
 
-const WorkerHoursComponent = () => {
+const WorkerHoursView = () => {
+  const auth = getAuth(firebaseApp);
+  const db = getFirestore(firebaseApp);
   const router = useRouter();
   const searchParams = useSearchParams();
   const workerId = searchParams.get("workerId");
-  const auth = getAuth(firebaseApp);
-  const db = getFirestore(firebaseApp);
-  const [worker, setWorker] = useState(null);
+
+  const [workers, setWorkers] = useState([]);
+  const [workerHours, setWorkerHours] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  const [filteredData, setFilteredData] = useState({});
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedWorker, setSelectedWorker] = useState(null);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
 
   useEffect(() => {
-    const fetchWorker = async () => {
+    const fetchWorkers = async () => {
       const user = auth.currentUser;
       if (!user) {
         setError("User not signed in.");
@@ -76,61 +134,79 @@ const WorkerHoursComponent = () => {
       }
 
       try {
-        const workerDocRef = doc(db, "managers", user.uid, "workers", workerId);
-        const workerDoc = await getDoc(workerDocRef);
-        if (workerDoc.exists()) {
-          const workerData = workerDoc.data();
-          setWorker(workerData);
-          setFilteredData(workerData.workData || {});
-        } else {
-          setError("Worker not found.");
-        }
+        const q = query(collection(db, "managers", user.uid, "workers"));
+        const querySnapshot = await getDocs(q);
+        const workerData = [];
+        const workerHoursData = {};
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          workerData.push({ id: doc.id, ...data });
+          if (data.workData) {
+            Object.keys(data.workData).forEach((date) => {
+              if (!workerHoursData[date]) {
+                workerHoursData[date] = [];
+              }
+              workerHoursData[date].push({
+                workerId: doc.id,
+                name: data.name,
+                ...data.workData[date],
+              });
+            });
+          }
+        });
+        setWorkers(workerData);
+        setWorkerHours(workerHoursData);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching worker:", error);
-        setError("Error fetching worker: " + error.message);
+        console.error("Error fetching workers:", error);
+        setError("Error fetching workers: " + error.message);
         setLoading(false);
       }
     };
 
-    fetchWorker();
-  }, [auth, db, workerId]);
+    fetchWorkers();
+  }, [auth, db]);
 
   const filterByDateRange = () => {
-    if (!worker || !worker.workData) return;
+    if (!startDate || !endDate) {
+      console.warn("Start date or end date is missing.");
+      return;
+    }
 
-    const filtered = {};
-    Object.keys(worker.workData).forEach((date) => {
-      const dateObj = new Date(date);
-      if (dateObj >= startDate && dateObj <= endDate) {
-        filtered[date] = worker.workData[date];
-      }
-    });
-
-    setFilteredData(filtered);
+    // Implement date range filtering logic here
   };
 
-  const formatTime = (hours) => {
-    const h = Math.floor(hours);
-    const m = Math.floor((hours - h) * 60);
-    return `${h}h ${m}m`;
+  const handleDayClick = (date) => {
+    const dateString = date.toISOString().split("T")[0];
+    setSelectedDate(date);
+    setSelectedWorker(workerHours[dateString] || []);
+    setModalIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalIsOpen(false);
+    setSelectedDate(null);
+    setSelectedWorker(null);
+  };
+
+  const goBack = () => {
+    router.push(`/punchInOut?workerId=${workerId}`); // Adjust the route as needed
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-300 via-blue-600 to-blue-800 flex flex-col justify-center items-center text-white">
-      <div className="w-full max-w-6xl mt-10">
+    <Container>
+      <Content>
+        <BackButton onClick={goBack}>Back</BackButton>
+        <Title>Worker Hours</Title>
         {loading ? (
           <p>Loading...</p>
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : (
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full text-black">
-            <h2 className="text-gray-800 text-3xl mb-6 font-bold">
-              Worked Hours
-            </h2>
-            <div className="flex justify-between mb-6">
-              <div className="flex flex-col">
-                <label className="text-gray-700 mb-2">Start Date</label>
+          <>
+            <DateRangePicker>
+              <div>
+                <label>Start Date</label>
                 <DatePicker
                   selected={startDate}
                   onChange={(date) => setStartDate(date)}
@@ -138,8 +214,8 @@ const WorkerHoursComponent = () => {
                   className="px-4 py-2 rounded-md"
                 />
               </div>
-              <div className="flex flex-col">
-                <label className="text-gray-700 mb-2">End Date</label>
+              <div>
+                <label>End Date</label>
                 <DatePicker
                   selected={endDate}
                   onChange={(date) => setEndDate(date)}
@@ -147,57 +223,59 @@ const WorkerHoursComponent = () => {
                   className="px-4 py-2 rounded-md"
                 />
               </div>
-              <button
-                onClick={filterByDateRange}
-                className="bg-blue-500 mt-6 text-white px-6 py-3 rounded-md mr-2 shadow-md hover:bg-blue-600 border-2 border-transparent hover:border-blue-300"
-              >
-                Filter
-              </button>
-            </div>
-            <div className="bg-blue-100 p-6 rounded-lg shadow-lg">
-              <CustomCalendar
-                value={startDate}
-                tileContent={({ date, view }) => {
-                  if (view === "month") {
-                    const dateString = date.toISOString().split("T")[0];
-                    const data = filteredData[dateString];
-                    if (data) {
-                      return (
-                        <div>
-                          <p className="text-xs font-semibold">
-                            Worked: {formatTime(data.workHours)}
-                          </p>
-                          <p className="text-xs font-semibold">
-                            Break: {formatTime(data.breakHours)}
-                          </p>
-                          <p className="text-xs font-semibold">
-                            Paid: {formatTime(data.paidHours)}
-                          </p>
-                        </div>
-                      );
-                    }
+              <Button onClick={filterByDateRange}>Filter</Button>
+            </DateRangePicker>
+            <CustomCalendar
+              onClickDay={handleDayClick}
+              tileContent={({ date, view }) => {
+                if (view === "month") {
+                  const dateString = date.toISOString().split("T")[0];
+                  if (workerHours[dateString]) {
+                    return <div>🟢</div>; // Mark the day with work hours
                   }
-                  return null;
-                }}
-              />
-            </div>
-            <Link
-              href={`/punchInOut?workerId=${workerId}`}
-              className="bg-gray-500 mt-6 text-white px-4 py-2 rounded-md inline-block shadow-md hover:bg-gray-600 border-2 border-transparent hover:border-gray-400"
+                }
+                return null;
+              }}
+            />
+            <Modal
+              isOpen={modalIsOpen}
+              onRequestClose={closeModal}
+              contentLabel="Worker Hours Details"
+              style={{
+                content: {
+                  top: "50%",
+                  left: "50%",
+                  right: "auto",
+                  bottom: "auto",
+                  marginRight: "-50%",
+                  transform: "translate(-50%, -50%)",
+                },
+              }}
             >
-              Back to Punch In/Out
-            </Link>
-          </div>
+              <h2>
+                Details for{" "}
+                {selectedDate && format(selectedDate, "MMMM dd, yyyy")}
+              </h2>
+              <button onClick={closeModal}>Close</button>
+              {selectedWorker && selectedWorker.length > 0 ? (
+                selectedWorker.map((worker) => (
+                  <div key={worker.workerId}>
+                    <p>Worker: {worker.name}</p>
+                    <p>Worked Hours: {worker.workHours}h</p>
+                    <p>Break Hours: {worker.breakHours}h</p>
+                    <p>Paid Hours: {worker.paidHours}h</p>
+                    <hr />
+                  </div>
+                ))
+              ) : (
+                <p>No work hours recorded for this day.</p>
+              )}
+            </Modal>
+          </>
         )}
-      </div>
-    </div>
+      </Content>
+    </Container>
   );
 };
 
-const WorkerHours = () => (
-  <Suspense fallback={<div>Loading...</div>}>
-    <WorkerHoursComponent />
-  </Suspense>
-);
-
-export default WorkerHours;
+export default WorkerHoursView;
