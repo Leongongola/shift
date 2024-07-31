@@ -71,18 +71,21 @@ const RequestLeaveComponent = () => {
       <SupportNavBar />
       <Box className="flex min-h-screen bg-gradient-to-r from-blue-300 via-blue-600 to-blue-800 flex-col items-center justify-between pt-15">
         <Box className="w-full h-screen flex flex-col justify-center items-center">
-          <Typography variant="h2" className="font-bold text-white mb-8">
+          {/* <Typography variant="h2" className="font-bold text-white mb-8">
             Request Leave
-          </Typography>
+          </Typography> */}
           <Box className="bg-black bg-opacity-80 rounded-lg shadow-md p-8 max-w-4xl w-full">
-            <Typography variant="h4" className="font-bold text-white mb-4">
+            <Typography
+              variant="h3"
+              className="font-bold text-white mb-8 text-center"
+            >
               Select Dates for Leave
             </Typography>
             <Calendar
               onChange={handleDateChange}
               selectRange
               value={selectedDates}
-              className="mb-6 react-calendar--large custom-calendar"
+              className="mb-6 react-calendar--large custom-calendar mt-12"
             />
             <form className="space-y-6" onSubmit={handleSubmit}>
               <Box>

@@ -335,10 +335,10 @@ const PunchInOutComponent = () => {
                 View Worked Hours
               </Link>
               <Link
-                href="/workersDashboard"
+                href="/signin"
                 className="bg-gray-500 text-white px-4 py-2 rounded-md inline-block shadow-md hover:bg-gray-600 border-2 border-transparent hover:border-gray-400"
               >
-                Back to Worker Search
+                Logout
               </Link>
             </div>
           </div>
