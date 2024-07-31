@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { getAuth } from "firebase/auth";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { useRouter, useSearchParams } from "next/navigation";
-import { firebaseApp } from "../../utils/firebase"; // Adjust the import path according to your project structure
+import { firebaseApp } from "../../utils/firebase";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Link from "next/link";
@@ -53,7 +53,7 @@ const CustomCalendar = styled(Calendar)`
   }
 `;
 
-const WorkerHours = () => {
+const WorkerHoursComponent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const workerId = searchParams.get("workerId");
@@ -76,16 +76,18 @@ const WorkerHours = () => {
       }
 
       try {
-        const workerDocRef = doc(db, "users", user.uid, "workers", workerId);
+        const workerDocRef = doc(db, "managers", user.uid, "workers", workerId);
         const workerDoc = await getDoc(workerDocRef);
         if (workerDoc.exists()) {
-          setWorker(workerDoc.data());
-          setFilteredData(workerDoc.data().workData || {});
+          const workerData = workerDoc.data();
+          setWorker(workerData);
+          setFilteredData(workerData.workData || {});
         } else {
           setError("Worker not found.");
         }
         setLoading(false);
       } catch (error) {
+        console.error("Error fetching worker:", error);
         setError("Error fetching worker: " + error.message);
         setLoading(false);
       }
@@ -191,5 +193,11 @@ const WorkerHours = () => {
     </div>
   );
 };
+
+const WorkerHours = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <WorkerHoursComponent />
+  </Suspense>
+);
 
 export default WorkerHours;

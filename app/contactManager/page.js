@@ -22,7 +22,7 @@ import SupportNavBar from "@/components/faqsContactManagerNavBar";
  *
  * @returns {JSX.Element} The WorkerSupport component
  */
-const WorkerSupport = () => {
+const WorkerSupportComponent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const managerId = searchParams.get("managerId");
@@ -166,5 +166,11 @@ const WorkerSupport = () => {
     </>
   );
 };
+
+const WorkerSupport = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <WorkerSupportComponent />
+  </Suspense>
+);
 
 export default WorkerSupport;
